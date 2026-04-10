@@ -1,0 +1,9 @@
+{
+  "rewrite": true,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
