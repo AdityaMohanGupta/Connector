@@ -23,6 +23,77 @@ WRITE_TOOLS = {
     "outlook_cancel_event": "cancel_event",
 }
 
+# Metadata for Gemini Tool Calling
+TOOLS_METADATA = [
+    {
+        "name": "outlook_list_messages",
+        "description": "List emails from the user's Outlook inbox or a specific folder.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "folder_id": {"type": "STRING", "description": "The ID of the folder to list (defaults to 'inbox')."},
+                "top": {"type": "INTEGER", "description": "Number of messages to return (default 10)."},
+            },
+        },
+    },
+    {
+        "name": "outlook_get_message",
+        "description": "Get the full content of a specific email by ID.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "message_id": {"type": "STRING", "description": "The unique ID of the message."},
+            },
+            "required": ["message_id"],
+        },
+    },
+    {
+        "name": "outlook_list_folders",
+        "description": "List all mail folders in the user's account.",
+        "parameters": {"type": "OBJECT", "properties": {}},
+    },
+    {
+        "name": "outlook_list_events",
+        "description": "List upcoming calendar events.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "top": {"type": "INTEGER", "description": "Number of events to return (default 10)."},
+            },
+        },
+    },
+    {
+        "name": "outlook_send_mail",
+        "description": "Send a new email. Requires user approval.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "to": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "List of recipient email addresses."},
+                "subject": {"type": "STRING", "description": "Subject of the email."},
+                "body": {"type": "STRING", "description": "Body content of the email."},
+                "cc": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Optional list of CC recipients."},
+            },
+            "required": ["to", "subject", "body"],
+        },
+    },
+    {
+        "name": "outlook_create_event",
+        "description": "Create a new calendar event. Requires user approval.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "subject": {"type": "STRING", "description": "Subject of the meeting."},
+                "body": {"type": "STRING", "description": "Description of the event."},
+                "start": {"type": "STRING", "description": "Start time in ISO format (e.g. 2023-10-27T10:00:00)."},
+                "end": {"type": "STRING", "description": "End time in ISO format."},
+                "location": {"type": "STRING", "description": "Location display name."},
+                "attendees": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "List of attendee emails."},
+            },
+            "required": ["subject", "start", "end"],
+        },
+    },
+]
+
 
 def parse_json(value: str | None, fallback: Any) -> Any:
     if not value:

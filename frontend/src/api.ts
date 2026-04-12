@@ -1,4 +1,4 @@
-import type { AgentToolResult, AuditLog, CalendarEvent, Folder, Message, PendingAction, User } from "./types";
+import type { AgentToolResult, AuditLog, CalendarEvent, ChatMessage, Folder, Message, PendingAction, User } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -60,5 +60,7 @@ export const api = {
     request<PendingAction>(`/agent/actions/${id}/approve`, { method: "POST" }),
   rejectAction: (id: string) =>
     request<PendingAction>(`/agent/actions/${id}/reject`, { method: "POST" }),
-  audit: () => request<AuditLog[]>("/agent/audit")
+  audit: () => request<AuditLog[]>("/agent/audit"),
+  chatHistory: () => request<ChatMessage[]>("/agent/chat/history"),
+  chat: (message: string) => request<ChatMessage>("/agent/chat", { method: "POST", body: JSON.stringify({ message }) })
 };

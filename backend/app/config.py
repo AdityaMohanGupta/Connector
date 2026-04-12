@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     token_encryption_key: str = ""
     frontend_origin: str = "http://localhost:5173"
     mcp_bearer_token: str = ""
+    gemini_api_key: str = ""
     environment: Literal["development", "test", "production"] = "development"
 
     graph_base_url: str = "https://graph.microsoft.com/v1.0"

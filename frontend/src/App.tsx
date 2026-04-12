@@ -1,19 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
-import type { AuditLog, CalendarEvent, Folder, Message, PendingAction, User } from "./types";
-
-const tools = [
-  "outlook_list_folders",
-  "outlook_list_messages",
-  "outlook_get_message",
-  "outlook_list_events",
-  "outlook_send_mail",
-  "outlook_create_event",
-  "outlook_update_event",
-  "outlook_cancel_event"
-];
-
-const defaultToolArgs = '{\n  "folder_id": "inbox",\n  "top": 10\n}';
+import type { AuditLog, CalendarEvent, ChatMessage, Folder, Message, PendingAction, User } from "./types";
 
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
@@ -47,9 +34,6 @@ function App() {
   const [status, setStatus] = useState("Ready");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [toolName, setToolName] = useState(tools[1]);
-  const [toolArgs, setToolArgs] = useState(defaultToolArgs);
-  const [toolResult, setToolResult] = useState("");
   const [sendForm, setSendForm] = useState({ to: "", cc: "", subject: "", body: "" });
   const [eventForm, setEventForm] = useState({
     subject: "",
@@ -60,6 +44,9 @@ function App() {
     attendees: ""
   });
   const [selectedEventId, setSelectedEventId] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
 
   const pendingCount = useMemo(
     () => actions.filter((action) => action.status === "pending").length,
@@ -87,13 +74,15 @@ function App() {
         api.messages(selectedFolder),
         api.events(),
         api.actions(),
-        api.audit()
+        api.audit(),
+        api.chatHistory()
       ]);
       setFolders(folderData.folders);
       setMessages(messageData.messages);
       setEvents(eventData.events);
       setActions(actionData);
       setAudit(auditData);
+      setChatHistory(chatHistoryData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load Outlook workspace.");
     } finally {
@@ -224,19 +213,33 @@ function App() {
     }
   };
 
-  const runTool = async () => {
-    setBusy(true);
-    setError("");
+  const sendChatMessage = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!chatInput.trim() || chatBusy) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput("");
+    setChatBusy(true);
+
+    // Optimistic update for user message
+    const tempId = Math.random().toString();
+    setChatHistory((prev) => [
+      ...prev,
+      { id: tempId, role: "user", content: userMessage, created_at: new Date().toISOString() }
+    ]);
+
     try {
-      const args = JSON.parse(toolArgs) as Record<string, unknown>;
-      const result = await api.invokeTool(toolName, args);
-      setToolResult(jsonText(result));
-      const actionData = await api.actions();
-      setActions(actionData);
+      const result = await api.chat(userMessage);
+      setChatHistory((prev) => [...prev.filter((m) => m.id !== tempId), result]);
+      // If the LLM called a tool, refresh actions
+      if (result.content.toLowerCase().includes("pending") || result.content.toLowerCase().includes("tool")) {
+        const actionData = await api.actions();
+        setActions(actionData);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Tool arguments must be valid JSON.");
+      setError(err instanceof Error ? err.message : "Could not send chat message.");
     } finally {
-      setBusy(false);
+      setChatBusy(false);
     }
   };
 
@@ -463,25 +466,42 @@ function App() {
           ) : null}
 
           {activeView === "agent" ? (
-            <section className="surface two-column">
-              <div className="form-stack">
-                <h2>MCP tool tester</h2>
-                <p>Read tools return data now. Write tools create pending approvals.</p>
-                <select value={toolName} onChange={(event) => setToolName(event.target.value)}>
-                  {tools.map((tool) => (
-                    <option key={tool} value={tool}>
-                      {tool}
-                    </option>
-                  ))}
-                </select>
-                <textarea value={toolArgs} onChange={(event) => setToolArgs(event.target.value)} />
-                <button type="button" onClick={runTool} disabled={busy}>
-                  Run tool
-                </button>
-              </div>
-              <div className="detail-pane">
-                <h2>Tool result</h2>
-                <pre>{toolResult || "No tool run yet."}</pre>
+            <section className="surface agent-full">
+              <div className="chat-pane full-width">
+                <div className="section-head">
+                  <h2>AI Agent Chat</h2>
+                  <p className="eyebrow">Gemini 2.5 Flash</p>
+                </div>
+                <div className="chat-window">
+                  {chatHistory.length === 0 ? (
+                    <div className="chat-empty">
+                      <p>Ask me to list your emails, summarize meetings, or schedule new events.</p>
+                    </div>
+                  ) : (
+                    chatHistory.map((msg) => (
+                      <div key={msg.id} className={`chat-bubble ${msg.role}`}>
+                        <div className="bubble-content">{msg.content}</div>
+                        <small className="bubble-meta">{formatDate(msg.created_at)}</small>
+                      </div>
+                    ))
+                  )}
+                  {chatBusy ? (
+                    <div className="chat-bubble assistant thinking">
+                      <div className="bubble-content">Agent is thinking...</div>
+                    </div>
+                  ) : null}
+                </div>
+                <form onSubmit={sendChatMessage} className="chat-input-row">
+                  <input
+                    placeholder="Ask the agent anything..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    disabled={chatBusy}
+                  />
+                  <button type="submit" disabled={chatBusy || !chatInput.trim()}>
+                    Send
+                  </button>
+                </form>
               </div>
             </section>
           ) : null}

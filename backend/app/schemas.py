@@ -74,3 +74,22 @@ class AgentToolResult(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
     pending_action_id: str | None = None
     message: str = ""
+
+
+class ChatMessageOut(BaseModel):
+    id: str
+    role: str
+    content: str
+    created_at: datetime
+
+
+class ChatIn(BaseModel):
+    message: str
+
+
+class ChatOut(BaseModel):
+    id: str
+    role: str
+    content: str
+    created_at: datetime
+    suggested_actions: list[str] = Field(default_factory=list)
