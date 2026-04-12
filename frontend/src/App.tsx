@@ -109,17 +109,10 @@ function App() {
     void loadWorkspace();
   }, [loadWorkspace]);
 
-  const connect = async () => {
-    setBusy(true);
-    setError("");
-    try {
-      const result = await api.login();
-      window.location.href = result.authorization_url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start Microsoft sign-in.");
-    } finally {
-      setBusy(false);
-    }
+  const connect = () => {
+    // Using a direct link instead of fetch ensures the session cookie is set 
+    // during a top-level navigation, avoiding cross-site fetch restrictions.
+    window.location.href = `${api.baseUrl}/auth/microsoft/login?redirect=true`;
   };
 
   const logout = async () => {

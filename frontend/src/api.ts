@@ -30,6 +30,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  baseUrl: API_BASE,
   me: () => request<User>("/auth/me"),
   login: () => request<{ authorization_url: string }>("/auth/microsoft/login"),
   logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST" }),

@@ -47,17 +47,27 @@ class SessionCodec:
         return loaded if isinstance(loaded, dict) else {}
 
     def set_cookie(self, response: Response, name: str, data: dict[str, Any]) -> None:
+        # Cross-site OAuth requires SameSite=None and Secure=True.
+        # We only use None if in production (where we have HTTPS).
+        # In development (localhost), Lax is usually fine for local testing.
+        is_prod = self.settings.environment == "production"
+        samesite = "none" if is_prod else "lax"
+        secure = True if is_prod else self.settings.is_secure_cookie
+
         response.set_cookie(
             name,
             self.dumps(data),
             httponly=True,
-            secure=self.settings.is_secure_cookie,
-            samesite="lax",
+            secure=secure,
+            samesite=samesite,
             max_age=60 * 60 * 24 * 14,
         )
 
     def clear_cookie(self, response: Response, name: str) -> None:
-        response.delete_cookie(name, httponly=True, secure=self.settings.is_secure_cookie, samesite="lax")
+        is_prod = self.settings.environment == "production"
+        samesite = "none" if is_prod else "lax"
+        secure = True if is_prod else self.settings.is_secure_cookie
+        response.delete_cookie(name, httponly=True, secure=secure, samesite=samesite)
 
 
 def b64_json(data: dict[str, Any]) -> str:
