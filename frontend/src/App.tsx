@@ -69,7 +69,7 @@ function App() {
     setBusy(true);
     setError("");
     try {
-      const [folderData, messageData, eventData, actionData, auditData] = await Promise.all([
+      const [folderData, messageData, eventData, actionData, auditData, chatHistoryData] = await Promise.all([
         api.folders(),
         api.messages(selectedFolder),
         api.events(),
