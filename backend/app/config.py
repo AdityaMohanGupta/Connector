@@ -26,16 +26,10 @@ class Settings(BaseSettings):
     oauth_cookie_name: str = "outlook_connector_oauth"
 
     auth_scopes: list[str] = Field(
-        default_factory=lambda: [
-            "email",
-            "User.Read",
-            "Mail.Read",
-            "Mail.Send",
-            "Calendars.ReadWrite",
-        ]
+        default_factory=lambda: ["https://graph.microsoft.com/.default"]
     )
     graph_scopes: list[str] = Field(
-        default_factory=lambda: ["User.Read", "Mail.Read", "Mail.Send", "Calendars.ReadWrite"]
+        default_factory=lambda: ["https://graph.microsoft.com/.default"]
     )
 
     @property
