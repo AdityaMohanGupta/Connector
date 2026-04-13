@@ -35,6 +35,7 @@ class MicrosoftOAuthService:
         return self._client(self._cache()).initiate_auth_code_flow(
             scopes=self.settings.auth_scopes,
             redirect_uri=self.settings.microsoft_redirect_uri,
+            prompt="select_account",
         )
 
     async def complete_auth_flow(
